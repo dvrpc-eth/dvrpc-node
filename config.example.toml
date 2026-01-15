@@ -1,0 +1,47 @@
+# DVRPC Node Configuration
+
+[server]
+# Host to bind the RPC server
+host = "127.0.0.1"
+# Port for the RPC server
+port = 8545
+# Maximum concurrent connections
+max_connections = 100
+
+[ethereum]
+# Ethereum network: "mainnet", "sepolia", "holesky"
+network = "mainnet"
+
+# Execution layer RPC endpoint (Infura, Alchemy, local node)
+execution_rpc = "https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY"
+
+# Consensus layer beacon API endpoint
+consensus_rpc = "https://www.lightclientdata.org"
+
+# Chain ID (1 for mainnet, 11155111 for sepolia)
+chain_id = 1
+
+[consensus]
+# Enable Helios light client for consensus verification
+enabled = true
+
+# Checkpoint for light client sync (recent finalized block root)
+# Get from: https://beaconcha.in or your beacon node
+checkpoint = "0x..."
+
+# Data directory for light client state
+data_dir = "./data/consensus"
+
+[proof]
+# Enable proof generation for RPC responses
+enabled = true
+
+# Cache size for proof data (number of blocks)
+cache_size = 128
+
+[logging]
+# Log level: "trace", "debug", "info", "warn", "error"
+level = "info"
+
+# Log format: "json" or "pretty"
+format = "pretty"
