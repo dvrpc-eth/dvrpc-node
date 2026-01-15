@@ -1,51 +1,29 @@
 # DVRPC Node
 
-Decentralized Verified RPC node for Ethereum. Drop-in replacement for standard RPC endpoints that returns cryptographically verified responses.
+> **Work in Progress** - This project is under active development.
 
-## What It Does
+Decentralized Verified RPC node for Ethereum.
 
-- **Drop-in RPC replacement**: Swap your RPC URL, get verified responses
-- **Standard eth_* methods**: Full compatibility with existing tooling
-- **EIP-1186 proofs**: Merkle proofs for account state and storage
-- **Pluggable consensus**: Configurable light client backend for state root verification
+## Goal
 
-## Quick Start
+A drop-in replacement for standard Ethereum RPC that returns cryptographically verified responses using light client consensus and EIP-1186 Merkle proofs.
 
-```bash
-cargo build --release
-cp config.example.toml config.toml
-./target/release/dvrpc-node --config config.toml
-```
+## Status
 
-## Configuration
-
-```toml
-[server]
-host = "127.0.0.1"
-port = 8545
-
-[ethereum]
-network = "mainnet"
-execution_rpc = "https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY"
-consensus_rpc = "https://www.lightclientdata.org"
-
-[consensus]
-enabled = true
-```
-
-## API
-
-### Standard Methods (drop-in compatible)
-
-### Extended Methods (with proofs)
+- [x] Project structure
+- [x] Configuration system
+- [x] RPC server scaffold
+- [ ] Light client integration
+- [ ] Proof fetching (eth_getProof)
+- [ ] Proof verification (MPT)
+- [ ] Execution client integration
 
 ## Development
 
 ```bash
+cargo build
 cargo test
-cargo fmt
-cargo clippy
-RUST_LOG=debug cargo run -- --config config.toml
+cargo run -- --config config.toml
 ```
 
 ## License
