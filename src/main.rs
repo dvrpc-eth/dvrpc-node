@@ -2,7 +2,7 @@ use clap::Parser;
 use eyre::Result;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use tracing::{info, Level};
+use tracing::{info, warn, Level};
 use tracing_subscriber::{fmt, EnvFilter};
 
 mod config;
@@ -71,9 +71,25 @@ async fn main() -> Result<()> {
     // Initialize consensus client
     let consensus_client = if config.consensus.enabled {
         info!("Initializing consensus client");
-        let client = consensus::ConsensusClient::new(&config).await?;
-        client.wait_for_sync().await?;
-        Some(client)
+        match consensus::ConsensusClient::new(&config).await {
+            Ok(client) => {
+                match client.wait_for_sync().await {
+                    Ok(()) => {
+                        info!("Consensus client synced successfully");
+                        Some(client)
+                    }
+                    Err(e) => {
+                        warn!("Consensus sync failed: {}. Continuing without consensus verification.", e);
+                        warn!("Proofs will still be fetched but not verified against light client.");
+                        None
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("Failed to initialize consensus client: {}. Continuing without consensus.", e);
+                None
+            }
+        }
     } else {
         info!("Consensus verification disabled");
         None

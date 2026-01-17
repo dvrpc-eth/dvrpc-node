@@ -28,10 +28,17 @@ impl ConsensusClient {
             Network::Holesky => HeliosNetwork::Holesky,
         };
 
+        let fallback_url = match config.ethereum.network {
+            Network::Mainnet => "https://sync-mainnet.beaconcha.in",
+            Network::Sepolia => "https://sync-sepolia.beaconcha.in",
+            Network::Holesky => "https://sync-holesky.beaconcha.in",
+        };
+
         let builder: EthereumClientBuilder<ConfigDB> = EthereumClientBuilder::new()
             .network(network)
             .execution_rpc(&config.ethereum.execution_rpc)?
             .consensus_rpc(&config.ethereum.consensus_rpc)?
+            .fallback(fallback_url)?
             .load_external_fallback();
 
         let builder = match &config.consensus.checkpoint {
