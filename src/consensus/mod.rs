@@ -34,12 +34,13 @@ impl ConsensusClient {
             .consensus_rpc(&config.ethereum.consensus_rpc)?
             .load_external_fallback();
 
-        let builder = if let Some(ref checkpoint) = config.consensus.checkpoint {
-            let checkpoint_bytes = hex::decode(checkpoint.trim_start_matches("0x"))?;
-            let checkpoint_hash = B256::from_slice(&checkpoint_bytes);
-            builder.checkpoint(checkpoint_hash)
-        } else {
-            builder
+        let builder = match &config.consensus.checkpoint {
+            Some(checkpoint) if !checkpoint.is_empty() => {
+                let checkpoint_bytes = hex::decode(checkpoint.trim_start_matches("0x"))?;
+                let checkpoint_hash = B256::from_slice(&checkpoint_bytes);
+                builder.checkpoint(checkpoint_hash)
+            }
+            _ => builder,
         };
 
         let client = builder.build()?;
