@@ -69,7 +69,9 @@ async fn main() -> Result<()> {
     // Initialize consensus client
     let consensus_client = if config.consensus.enabled {
         info!("Initializing consensus client");
-        Some(consensus::ConsensusClient::new(&config).await?)
+        let client = consensus::ConsensusClient::new(&config).await?;
+        client.wait_for_sync().await?;
+        Some(client)
     } else {
         info!("Consensus verification disabled");
         None
