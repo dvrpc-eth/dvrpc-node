@@ -1992,6 +1992,7 @@ dependencies = [
  "helios-ethereum",
  "hex",
  "jsonrpsee 0.24.10",
+ "reqwest",
  "serde",
  "serde_json",
  "sha3",

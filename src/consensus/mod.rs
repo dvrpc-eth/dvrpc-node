@@ -12,6 +12,7 @@ use tokio::sync::RwLock;
 use tracing::{debug, info};
 
 use crate::config::{Config, Network};
+use crate::types::ConsensusProof;
 
 pub struct ConsensusClient {
     client: Arc<RwLock<EthereumClient>>,
@@ -85,5 +86,27 @@ impl ConsensusClient {
         let block_id = block.map(|b| b.into()).unwrap_or_default();
         let value = client.get_storage_at(address, slot, block_id).await?;
         Ok(value)
+    }
+
+    pub async fn get_consensus_proof(&self) -> Result<ConsensusProof> {
+        let client = self.client.read().await;
+        let block_number = client.get_block_number().await?.to::<u64>();
+
+        // Get the block to extract state root
+        let block = client
+            .get_block(block_number.into(), false)
+            .await?
+            .ok_or_else(|| eyre::eyre!("Block not found"))?;
+
+        Ok(ConsensusProof {
+            state_root: block.header.state_root,
+            slot: 0,
+            block_number,
+        })
+    }
+
+    pub async fn get_state_root(&self) -> Result<B256> {
+        let proof = self.get_consensus_proof().await?;
+        Ok(proof.state_root)
     }
 }

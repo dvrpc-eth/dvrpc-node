@@ -9,6 +9,8 @@ mod config;
 mod consensus;
 mod proof;
 mod rpc;
+mod types;
+mod upstream;
 
 use config::Config;
 
