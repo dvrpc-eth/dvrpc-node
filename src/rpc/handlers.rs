@@ -16,8 +16,8 @@ fn parse_address_block(params: &serde_json::Value) -> Result<(Address, String), 
         return Err("missing address parameter".to_string());
     }
 
-    let address: Address = serde_json::from_value(params[0].clone())
-        .map_err(|e| format!("invalid address: {}", e))?;
+    let address: Address =
+        serde_json::from_value(params[0].clone()).map_err(|e| format!("invalid address: {}", e))?;
 
     let block = params
         .get(1)
@@ -68,7 +68,11 @@ pub async fn eth_get_balance(
     };
 
     // Fetch proof from upstream using consensus-verified block
-    let proof_data = match state.upstream.eth_get_proof(address, vec![], &query_block).await {
+    let proof_data = match state
+        .upstream
+        .eth_get_proof(address, vec![], &query_block)
+        .await
+    {
         Ok(p) => p,
         Err(e) => {
             error!("Failed to fetch proof: {}", e);
@@ -82,7 +86,10 @@ pub async fn eth_get_balance(
 
     // Verify proof against consensus state root
     if let Some(ref cp) = consensus_proof {
-        match state.proof_generator.verify_account_proof(cp.state_root, &proof_data) {
+        match state
+            .proof_generator
+            .verify_account_proof(cp.state_root, &proof_data)
+        {
             Ok(true) => {
                 debug!("Proof verified successfully against state root");
             }
@@ -211,7 +218,10 @@ pub async fn eth_get_storage_at(
 
     // Verify proof against consensus state root (including storage proof)
     if let Some(ref cp) = consensus_proof {
-        match state.proof_generator.verify_complete_proof(cp.state_root, &proof_data) {
+        match state
+            .proof_generator
+            .verify_complete_proof(cp.state_root, &proof_data)
+        {
             Ok(true) => {
                 debug!("Complete proof verified successfully");
             }
@@ -290,7 +300,11 @@ pub async fn eth_get_transaction_count(
         block.clone()
     };
 
-    let proof_data = match state.upstream.eth_get_proof(address, vec![], &query_block).await {
+    let proof_data = match state
+        .upstream
+        .eth_get_proof(address, vec![], &query_block)
+        .await
+    {
         Ok(p) => p,
         Err(e) => {
             error!("Failed to fetch proof: {}", e);
@@ -304,7 +318,10 @@ pub async fn eth_get_transaction_count(
 
     // Verify proof against consensus state root
     if let Some(ref cp) = consensus_proof {
-        match state.proof_generator.verify_account_proof(cp.state_root, &proof_data) {
+        match state
+            .proof_generator
+            .verify_account_proof(cp.state_root, &proof_data)
+        {
             Ok(true) => {
                 debug!("Proof verified successfully");
             }
