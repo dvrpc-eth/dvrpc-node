@@ -43,20 +43,7 @@ pub async fn eth_get_balance(
 
     debug!(%address, %block, include_proof, "eth_getBalance");
 
-    // Fetch proof from upstream
-    let proof_data = match state.upstream.eth_get_proof(address, vec![], &block).await {
-        Ok(p) => p,
-        Err(e) => {
-            error!("Failed to fetch proof: {}", e);
-            return serde_json::to_value(RpcError::internal(
-                request.id.clone(),
-                format!("Failed to fetch proof: {}", e),
-            ))
-            .unwrap();
-        }
-    };
-
-    // Get consensus proof if we have a consensus client
+    // Get consensus proof first to determine which block to query
     let consensus_proof = if let Some(ref consensus) = state.consensus {
         match consensus.get_consensus_proof().await {
             Ok(cp) => Some(cp),
@@ -69,10 +56,54 @@ pub async fn eth_get_balance(
         None
     };
 
-    // TODO: Verify proof against consensus state root
-    // if let Some(ref cp) = consensus_proof {
-    //     verify_account_proof(&proof_data, cp.state_root)?;
-    // }
+    // Use consensus block number if available and user requested "latest"
+    let query_block = if block == "latest" {
+        if let Some(ref cp) = consensus_proof {
+            format!("0x{:x}", cp.block_number)
+        } else {
+            block.clone()
+        }
+    } else {
+        block.clone()
+    };
+
+    // Fetch proof from upstream using consensus-verified block
+    let proof_data = match state.upstream.eth_get_proof(address, vec![], &query_block).await {
+        Ok(p) => p,
+        Err(e) => {
+            error!("Failed to fetch proof: {}", e);
+            return serde_json::to_value(RpcError::internal(
+                request.id.clone(),
+                format!("Failed to fetch proof: {}", e),
+            ))
+            .unwrap();
+        }
+    };
+
+    // Verify proof against consensus state root
+    if let Some(ref cp) = consensus_proof {
+        match state.proof_generator.verify_account_proof(cp.state_root, &proof_data) {
+            Ok(true) => {
+                debug!("Proof verified successfully against state root");
+            }
+            Ok(false) => {
+                error!("Proof verification failed - data may be tampered");
+                return serde_json::to_value(RpcError::internal(
+                    request.id.clone(),
+                    "Proof verification failed - data integrity check failed",
+                ))
+                .unwrap();
+            }
+            Err(e) => {
+                error!("Proof verification error: {}", e);
+                return serde_json::to_value(RpcError::internal(
+                    request.id.clone(),
+                    format!("Proof verification error: {}", e),
+                ))
+                .unwrap();
+            }
+        }
+    }
 
     let balance = proof_data.balance;
 
@@ -143,10 +174,28 @@ pub async fn eth_get_storage_at(
 
     debug!(%address, %slot, %block, include_proof, "eth_getStorageAt");
 
-    // Fetch proof with storage key
+    // Get consensus proof first to determine which block to query
+    let consensus_proof = if let Some(ref consensus) = state.consensus {
+        consensus.get_consensus_proof().await.ok()
+    } else {
+        None
+    };
+
+    // Use consensus block number if available and user requested "latest"
+    let query_block = if block == "latest" {
+        if let Some(ref cp) = consensus_proof {
+            format!("0x{:x}", cp.block_number)
+        } else {
+            block.clone()
+        }
+    } else {
+        block.clone()
+    };
+
+    // Fetch proof with storage key using consensus-verified block
     let proof_data = match state
         .upstream
-        .eth_get_proof(address, vec![slot], &block)
+        .eth_get_proof(address, vec![slot], &query_block)
         .await
     {
         Ok(p) => p,
@@ -160,11 +209,30 @@ pub async fn eth_get_storage_at(
         }
     };
 
-    let consensus_proof = if let Some(ref consensus) = state.consensus {
-        consensus.get_consensus_proof().await.ok()
-    } else {
-        None
-    };
+    // Verify proof against consensus state root (including storage proof)
+    if let Some(ref cp) = consensus_proof {
+        match state.proof_generator.verify_complete_proof(cp.state_root, &proof_data) {
+            Ok(true) => {
+                debug!("Complete proof verified successfully");
+            }
+            Ok(false) => {
+                error!("Proof verification failed - data may be tampered");
+                return serde_json::to_value(RpcError::internal(
+                    request.id.clone(),
+                    "Proof verification failed - data integrity check failed",
+                ))
+                .unwrap();
+            }
+            Err(e) => {
+                error!("Proof verification error: {}", e);
+                return serde_json::to_value(RpcError::internal(
+                    request.id.clone(),
+                    format!("Proof verification error: {}", e),
+                ))
+                .unwrap();
+            }
+        }
+    }
 
     // Extract storage value
     let value = proof_data
@@ -204,7 +272,25 @@ pub async fn eth_get_transaction_count(
 
     debug!(%address, %block, include_proof, "eth_getTransactionCount");
 
-    let proof_data = match state.upstream.eth_get_proof(address, vec![], &block).await {
+    // Get consensus proof first to determine which block to query
+    let consensus_proof = if let Some(ref consensus) = state.consensus {
+        consensus.get_consensus_proof().await.ok()
+    } else {
+        None
+    };
+
+    // Use consensus block number if available and user requested "latest"
+    let query_block = if block == "latest" {
+        if let Some(ref cp) = consensus_proof {
+            format!("0x{:x}", cp.block_number)
+        } else {
+            block.clone()
+        }
+    } else {
+        block.clone()
+    };
+
+    let proof_data = match state.upstream.eth_get_proof(address, vec![], &query_block).await {
         Ok(p) => p,
         Err(e) => {
             error!("Failed to fetch proof: {}", e);
@@ -216,11 +302,30 @@ pub async fn eth_get_transaction_count(
         }
     };
 
-    let consensus_proof = if let Some(ref consensus) = state.consensus {
-        consensus.get_consensus_proof().await.ok()
-    } else {
-        None
-    };
+    // Verify proof against consensus state root
+    if let Some(ref cp) = consensus_proof {
+        match state.proof_generator.verify_account_proof(cp.state_root, &proof_data) {
+            Ok(true) => {
+                debug!("Proof verified successfully");
+            }
+            Ok(false) => {
+                error!("Proof verification failed - data may be tampered");
+                return serde_json::to_value(RpcError::internal(
+                    request.id.clone(),
+                    "Proof verification failed - data integrity check failed",
+                ))
+                .unwrap();
+            }
+            Err(e) => {
+                error!("Proof verification error: {}", e);
+                return serde_json::to_value(RpcError::internal(
+                    request.id.clone(),
+                    format!("Proof verification error: {}", e),
+                ))
+                .unwrap();
+            }
+        }
+    }
 
     let nonce = proof_data.nonce;
 
