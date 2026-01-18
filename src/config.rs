@@ -60,7 +60,10 @@ impl std::str::FromStr for Network {
             "mainnet" => Ok(Network::Mainnet),
             "sepolia" => Ok(Network::Sepolia),
             "holesky" => Ok(Network::Holesky),
-            _ => eyre::bail!("Invalid network: {}. Must be mainnet, sepolia, or holesky", s),
+            _ => eyre::bail!(
+                "Invalid network: {}. Must be mainnet, sepolia, or holesky",
+                s
+            ),
         }
     }
 }
