@@ -72,21 +72,25 @@ async fn main() -> Result<()> {
     let consensus_client = if config.consensus.enabled {
         info!("Initializing consensus client");
         match consensus::ConsensusClient::new(&config).await {
-            Ok(client) => {
-                match client.wait_for_sync().await {
-                    Ok(()) => {
-                        info!("Consensus client synced successfully");
-                        Some(client)
-                    }
-                    Err(e) => {
-                        warn!("Consensus sync failed: {}. Continuing without consensus verification.", e);
-                        warn!("Proofs will still be fetched but not verified against light client.");
-                        None
-                    }
+            Ok(client) => match client.wait_for_sync().await {
+                Ok(()) => {
+                    info!("Consensus client synced successfully");
+                    Some(client)
                 }
-            }
+                Err(e) => {
+                    warn!(
+                        "Consensus sync failed: {}. Continuing without consensus verification.",
+                        e
+                    );
+                    warn!("Proofs will still be fetched but not verified against light client.");
+                    None
+                }
+            },
             Err(e) => {
-                warn!("Failed to initialize consensus client: {}. Continuing without consensus.", e);
+                warn!(
+                    "Failed to initialize consensus client: {}. Continuing without consensus.",
+                    e
+                );
                 None
             }
         }

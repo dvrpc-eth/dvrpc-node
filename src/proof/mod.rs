@@ -120,7 +120,11 @@ impl ProofGenerator {
 
     /// Verify a storage proof against a storage root.
     #[instrument(skip(self, proof))]
-    pub fn verify_storage_proof(&self, storage_root: B256, proof: &StorageProofData) -> Result<bool> {
+    pub fn verify_storage_proof(
+        &self,
+        storage_root: B256,
+        proof: &StorageProofData,
+    ) -> Result<bool> {
         debug!(%proof.key, %storage_root, "Verifying storage proof");
 
         if proof.proof.is_empty() {
@@ -426,7 +430,10 @@ fn decode_rlp_length(data: &[u8]) -> Result<(&[u8], usize)> {
         if data.len() < 1 + len_bytes + len {
             bail!("RLP string truncated");
         }
-        Ok((&data[1 + len_bytes..1 + len_bytes + len], 1 + len_bytes + len))
+        Ok((
+            &data[1 + len_bytes..1 + len_bytes + len],
+            1 + len_bytes + len,
+        ))
     } else if prefix <= 0xf7 {
         // Short list (0-55 bytes)
         let len = (prefix - 0xc0) as usize;
@@ -444,7 +451,10 @@ fn decode_rlp_length(data: &[u8]) -> Result<(&[u8], usize)> {
         if data.len() < 1 + len_bytes + len {
             bail!("RLP list truncated");
         }
-        Ok((&data[1 + len_bytes..1 + len_bytes + len], 1 + len_bytes + len))
+        Ok((
+            &data[1 + len_bytes..1 + len_bytes + len],
+            1 + len_bytes + len,
+        ))
     }
 }
 
@@ -476,7 +486,10 @@ fn decode_rlp_item(data: &[u8]) -> Result<(Vec<u8>, usize)> {
         if data.len() < 1 + len_bytes + len {
             bail!("RLP item truncated");
         }
-        Ok((data[1 + len_bytes..1 + len_bytes + len].to_vec(), 1 + len_bytes + len))
+        Ok((
+            data[1 + len_bytes..1 + len_bytes + len].to_vec(),
+            1 + len_bytes + len,
+        ))
     } else if prefix <= 0xf7 {
         // Short list - return the whole encoded list
         let len = (prefix - 0xc0) as usize;
@@ -505,7 +518,10 @@ fn bytes_to_usize(bytes: &[u8]) -> Result<usize> {
     }
     let mut result: usize = 0;
     for &b in bytes {
-        result = result.checked_shl(8).ok_or_else(|| eyre::eyre!("Overflow"))? | (b as usize);
+        result = result
+            .checked_shl(8)
+            .ok_or_else(|| eyre::eyre!("Overflow"))?
+            | (b as usize);
     }
     Ok(result)
 }

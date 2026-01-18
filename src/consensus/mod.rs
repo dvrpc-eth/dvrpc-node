@@ -3,9 +3,8 @@
 use alloy_primitives::{Address, B256, U256};
 use eyre::Result;
 use helios_ethereum::{
-    config::networks::Network as HeliosNetwork,
-    database::ConfigDB,
-    EthereumClient, EthereumClientBuilder,
+    config::networks::Network as HeliosNetwork, database::ConfigDB, EthereumClient,
+    EthereumClientBuilder,
 };
 use std::sync::Arc;
 use tokio::sync::RwLock;
