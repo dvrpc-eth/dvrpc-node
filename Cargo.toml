@@ -19,9 +19,8 @@ jsonrpsee = { version = "0.24", features = ["server", "macros"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "trace"] }
 
-# Ethereum types
-alloy-primitives = { version = "0.8", features = ["serde"] }
-alloy-rlp = "0.3"
+# Helios light client (brings in alloy types)
+helios-ethereum = { git = "https://github.com/a16z/helios", tag = "0.11.0" }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -41,12 +40,17 @@ eyre = "0.6"
 # Crypto
 sha3 = "0.10"
 
+# HTTP client
+reqwest = { version = "0.12", features = ["json"] }
+
 # Utilities
 hex = "0.4"
 bytes = "1.7"
 
 # CLI
 clap = { version = "4.5", features = ["derive", "env"] }
+alloy-primitives = "1.5.2"
+alloy-rlp = "0.3"
 
 [dev-dependencies]
 tokio-test = "0.4"
