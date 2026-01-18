@@ -37,11 +37,19 @@ WORKDIR /app
 # Copy binary from builder
 COPY --from=builder /app/target/release/dvrpc-node /usr/local/bin/
 
-# Copy default config
-COPY config.example.toml /app/config.example.toml
-
 # Create data directory
 RUN mkdir -p /app/data
+
+# Environment variables for configuration
+# Required:
+ENV DVRPC_EXECUTION_RPC=""
+# Optional (with defaults):
+ENV DVRPC_HOST="0.0.0.0"
+ENV DVRPC_PORT="8545"
+ENV DVRPC_NETWORK="mainnet"
+ENV DVRPC_CONSENSUS_ENABLED="false"
+ENV DVRPC_CONSENSUS_RPC=""
+ENV DVRPC_LOG_LEVEL="info"
 
 # Expose RPC port
 EXPOSE 8545
@@ -50,5 +58,6 @@ EXPOSE 8545
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8545/health || exit 1
 
+# Run without config file - uses environment variables
 ENTRYPOINT ["dvrpc-node"]
-CMD ["--config", "/app/config.toml"]
+CMD []

@@ -1,5 +1,6 @@
 use eyre::{Context, Result};
 use serde::Deserialize;
+use std::env;
 use std::path::Path;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -51,6 +52,19 @@ impl std::fmt::Display for Network {
     }
 }
 
+impl std::str::FromStr for Network {
+    type Err = eyre::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        match s.to_lowercase().as_str() {
+            "mainnet" => Ok(Network::Mainnet),
+            "sepolia" => Ok(Network::Sepolia),
+            "holesky" => Ok(Network::Holesky),
+            _ => eyre::bail!("Invalid network: {}. Must be mainnet, sepolia, or holesky", s),
+        }
+    }
+}
+
 #[allow(dead_code)]
 impl Network {
     pub fn chain_id(&self) -> u64 {
@@ -91,7 +105,7 @@ pub struct LoggingConfig {
 }
 
 fn default_host() -> String {
-    "127.0.0.1".to_string()
+    "0.0.0.0".to_string()
 }
 
 fn default_port() -> u16 {
@@ -127,12 +141,111 @@ fn default_log_format() -> String {
 }
 
 impl Config {
+    /// Load config from file
     pub fn load(path: &Path) -> Result<Self> {
         let contents = std::fs::read_to_string(path)
             .with_context(|| format!("Failed to read config file: {}", path.display()))?;
 
         let config: Config =
             toml::from_str(&contents).with_context(|| "Failed to parse config file")?;
+
+        config.validate()?;
+
+        Ok(config)
+    }
+
+    /// Load config from environment variables
+    ///
+    /// Environment variables:
+    /// - DVRPC_HOST: Server host (default: 0.0.0.0)
+    /// - DVRPC_PORT: Server port (default: 8545)
+    /// - DVRPC_NETWORK: Network name (mainnet, sepolia, holesky)
+    /// - DVRPC_EXECUTION_RPC: Execution layer RPC URL
+    /// - DVRPC_CONSENSUS_RPC: Consensus layer RPC URL
+    /// - DVRPC_CHAIN_ID: Chain ID (default: based on network)
+    /// - DVRPC_CONSENSUS_ENABLED: Enable consensus verification (default: true)
+    /// - DVRPC_CHECKPOINT: Beacon chain checkpoint hash
+    pub fn from_env() -> Result<Self> {
+        let network: Network = env::var("DVRPC_NETWORK")
+            .unwrap_or_else(|_| "mainnet".to_string())
+            .parse()?;
+
+        let chain_id = env::var("DVRPC_CHAIN_ID")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| network.chain_id());
+
+        let config = Config {
+            server: ServerConfig {
+                host: env::var("DVRPC_HOST").unwrap_or_else(|_| default_host()),
+                port: env::var("DVRPC_PORT")
+                    .ok()
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or_else(default_port),
+                max_connections: env::var("DVRPC_MAX_CONNECTIONS")
+                    .ok()
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or_else(default_max_connections),
+            },
+            ethereum: EthereumConfig {
+                network,
+                execution_rpc: env::var("DVRPC_EXECUTION_RPC")
+                    .with_context(|| "DVRPC_EXECUTION_RPC environment variable is required")?,
+                consensus_rpc: env::var("DVRPC_CONSENSUS_RPC").unwrap_or_default(),
+                chain_id,
+            },
+            consensus: ConsensusConfig {
+                enabled: env::var("DVRPC_CONSENSUS_ENABLED")
+                    .map(|s| s.to_lowercase() == "true" || s == "1")
+                    .unwrap_or(true),
+                checkpoint: env::var("DVRPC_CHECKPOINT").ok(),
+                data_dir: env::var("DVRPC_DATA_DIR").unwrap_or_else(|_| default_data_dir()),
+            },
+            proof: ProofConfig {
+                enabled: env::var("DVRPC_PROOF_ENABLED")
+                    .map(|s| s.to_lowercase() == "true" || s == "1")
+                    .unwrap_or(true),
+                cache_size: env::var("DVRPC_CACHE_SIZE")
+                    .ok()
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or_else(default_cache_size),
+            },
+            logging: LoggingConfig {
+                level: env::var("DVRPC_LOG_LEVEL").unwrap_or_else(|_| default_log_level()),
+                format: env::var("DVRPC_LOG_FORMAT").unwrap_or_else(|_| default_log_format()),
+            },
+        };
+
+        config.validate()?;
+
+        Ok(config)
+    }
+
+    /// Load config from file with environment variable overrides
+    pub fn load_with_env(path: &Path) -> Result<Self> {
+        let mut config = Self::load(path)?;
+
+        // Override with environment variables if set
+        if let Ok(host) = env::var("DVRPC_HOST") {
+            config.server.host = host;
+        }
+        if let Ok(port) = env::var("DVRPC_PORT") {
+            if let Ok(p) = port.parse() {
+                config.server.port = p;
+            }
+        }
+        if let Ok(execution_rpc) = env::var("DVRPC_EXECUTION_RPC") {
+            config.ethereum.execution_rpc = execution_rpc;
+        }
+        if let Ok(consensus_rpc) = env::var("DVRPC_CONSENSUS_RPC") {
+            config.ethereum.consensus_rpc = consensus_rpc;
+        }
+        if let Ok(checkpoint) = env::var("DVRPC_CHECKPOINT") {
+            config.consensus.checkpoint = Some(checkpoint);
+        }
+        if let Ok(enabled) = env::var("DVRPC_CONSENSUS_ENABLED") {
+            config.consensus.enabled = enabled.to_lowercase() == "true" || enabled == "1";
+        }
 
         config.validate()?;
 
