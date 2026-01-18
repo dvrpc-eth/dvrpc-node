@@ -3,6 +3,7 @@ use serde::Deserialize;
 use std::path::Path;
 
 #[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
 pub struct Config {
     pub server: ServerConfig,
     pub ethereum: EthereumConfig,
@@ -13,6 +14,7 @@ pub struct Config {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
 pub struct ServerConfig {
     #[serde(default = "default_host")]
     pub host: String,
@@ -49,6 +51,7 @@ impl std::fmt::Display for Network {
     }
 }
 
+#[allow(dead_code)]
 impl Network {
     pub fn chain_id(&self) -> u64 {
         match self {
@@ -60,6 +63,7 @@ impl Network {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
 pub struct ConsensusConfig {
     #[serde(default = "default_true")]
     pub enabled: bool,
@@ -69,6 +73,7 @@ pub struct ConsensusConfig {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
 pub struct ProofConfig {
     #[serde(default = "default_true")]
     pub enabled: bool,
@@ -77,6 +82,7 @@ pub struct ProofConfig {
 }
 
 #[derive(Debug, Deserialize, Clone, Default)]
+#[allow(dead_code)]
 pub struct LoggingConfig {
     #[serde(default = "default_log_level")]
     pub level: String,

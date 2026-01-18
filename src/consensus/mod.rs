@@ -74,6 +74,7 @@ impl ConsensusClient {
         }
     }
 
+    #[allow(dead_code)]
     pub async fn get_balance(&self, address: Address, block: Option<u64>) -> Result<U256> {
         debug!(%address, ?block, "Getting balance via Helios");
         let client = self.client.read().await;
@@ -82,6 +83,7 @@ impl ConsensusClient {
         Ok(balance)
     }
 
+    #[allow(dead_code)]
     pub async fn get_storage_at(
         &self,
         address: Address,
@@ -112,6 +114,7 @@ impl ConsensusClient {
         })
     }
 
+    #[allow(dead_code)]
     pub async fn get_state_root(&self) -> Result<B256> {
         let proof = self.get_consensus_proof().await?;
         Ok(proof.state_root)

@@ -111,6 +111,7 @@ impl UpstreamClient {
         })
     }
 
+    #[allow(dead_code)]
     pub async fn eth_get_block_by_number(&self, block: &str) -> Result<B256> {
         debug!(block, "Fetching block from upstream");
 

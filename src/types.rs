@@ -35,6 +35,7 @@ pub struct StorageProofData {
 
 /// Standard JSON-RPC request.
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct RpcRequest {
     pub jsonrpc: String,
     pub method: String,
