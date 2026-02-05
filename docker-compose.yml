@@ -1,0 +1,36 @@
+services:
+  dvrpc-node:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dvrpc-node
+    ports:
+      - "8545:8545"
+    environment:
+      # Required: Execution layer RPC endpoint
+      DVRPC_EXECUTION_RPC: ${DVRPC_EXECUTION_RPC:-https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY}
+
+      # Network configuration
+      DVRPC_NETWORK: ${DVRPC_NETWORK:-mainnet}
+      DVRPC_HOST: "0.0.0.0"
+      DVRPC_PORT: "8545"
+
+      # Consensus (light client) configuration
+      DVRPC_CONSENSUS_ENABLED: ${DVRPC_CONSENSUS_ENABLED:-true}
+      DVRPC_CONSENSUS_RPC: ${DVRPC_CONSENSUS_RPC:-https://www.lightclientdata.org}
+
+      # Logging
+      DVRPC_LOG_LEVEL: ${DVRPC_LOG_LEVEL:-info}
+    volumes:
+      - dvrpc-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8545/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  dvrpc-data:
+    driver: local
