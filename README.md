@@ -71,6 +71,27 @@ curl -X POST http://127.0.0.1:8545 \
   -d '{"jsonrpc":"2.0","method":"eth_getBalance","params":["0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045","latest"],"id":1}'
 ```
 
+## Docker
+
+```bash
+# Create .env file with your configuration
+cat > .env << 'EOF'
+DVRPC_EXECUTION_RPC=https://mainnet.infura.io/v3/YOUR_API_KEY
+DVRPC_CONSENSUS_RPC=http://testing.mainnet.beacon-api.nimbus.team
+DVRPC_CHECKPOINT=0x...  # Get from beacon chain
+DVRPC_NETWORK=mainnet
+DVRPC_CONSENSUS_ENABLED=true
+EOF
+
+# Run with docker-compose
+docker-compose up --build
+```
+
+Get a fresh checkpoint from the beacon chain:
+```bash
+curl -s "http://testing.mainnet.beacon-api.nimbus.team/eth/v1/beacon/headers/finalized" | jq -r '.data.root'
+```
+
 ## Documentation
 
 **[DVRPC Documentation](https://github.com/dvrpc-eth/dvrpc-docs)**

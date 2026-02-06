@@ -18,6 +18,7 @@ services:
       # Consensus (light client) configuration
       DVRPC_CONSENSUS_ENABLED: ${DVRPC_CONSENSUS_ENABLED:-true}
       DVRPC_CONSENSUS_RPC: ${DVRPC_CONSENSUS_RPC:-https://www.lightclientdata.org}
+      DVRPC_CHECKPOINT: ${DVRPC_CHECKPOINT:-}
 
       # Logging
       DVRPC_LOG_LEVEL: ${DVRPC_LOG_LEVEL:-info}
